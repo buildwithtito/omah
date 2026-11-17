@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oma. — Video Editor & Motion Designer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Plus Jakarta Sans & Instrument Serif for kinetic editorial contrast -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#09090B',
+                        omaPink: '#FF5C9D',
+                        omaBlush: '#FF9EC7',
+                        omaLavender: '#F5D0FE',
+                        omaGold: '#FBBF24',
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        serif: ['Instrument Serif', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #09090B;
+            color: #FFFFFF;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Kinetic Word Mask & Smooth Keyframe Reveal */
+        @keyframes editorialWordReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(28px);
+                filter: blur(4px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+                filter: blur(0);
+            }
+        }
+
+        .word-pop {
+            display: inline-block;
+            opacity: 0;
+        }
+
+        .word-pop.animate {
+            animation: editorialWordReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Staggered Headline Words */
+        .headline-word {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(32px);
+            transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .headline-word.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Intro Overlay Stage -> Glides Smoothly into Hero Top-Left */
+        #intro-greeting {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.3);
+            z-index: 60;
+            white-space: nowrap;
+            transition: all 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        /* Smooth Upward Reveal for Stats & Buttons */
+        .hero-reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .hero-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Cutout Keyframed Entrance: Left-to-Right with Smooth Opacity Interpolation (No Bounce) */
+        .cutout-entrance {
+            opacity: 0;
+            transform: translateX(-64px);
+            transition: opacity 1.3s cubic-bezier(0.16, 1, 0.3, 1), transform 1.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .cutout-entrance.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Seamless Editorial Bottom Fade for Cutout Portrait */
+        .cutout-bottom-fade {
+            mask-image: linear-gradient(to bottom, #000000 62%, rgba(0, 0, 0, 0.72) 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, #000000 62%, rgba(0, 0, 0, 0.72) 80%, transparent 100%);
+        }
+
+        /* Full-Screen Story Scroll Reveals */
+        .story-beat-content {
+            opacity: 0;
+            transform: translateY(44px);
+            transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .story-beat.in-view .story-beat-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Horizontal Scrollable Reel Track (Hide Native Scrollbar cleanly) */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Portrait Reel Cards */
+        .reel-card {
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+        }
+
+        .reel-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 92, 157, 0.5);
+        }
+
+        /* Custom Minimal Page Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090B;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272A;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF5C9D;
+        }
+    </style>
+</head>
+<body class="bg-obsidian text-white antialiased selection:bg-omaPink selection:text-black">
+
+    <!-- MINIMALIST NAVBAR (LEFT: "Oma." | RIGHT: ICON-ONLY SOCIALS & EMAIL) -->
+    <header id="navbar" class="fixed top-0 left-0 right-0 z-50 px-6 md:px-14 py-6 bg-transparent  border-b border-white/[0.07] opacity-0 transition-opacity duration-700">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Wordmark -->
+            <a href="#top" class="text-2xl md:text-3xl font-extrabold tracking-tight text-white hover:opacity-80 transition-opacity">
+                Oma<span class="text-omaPink">.</span>
+            </a>
+
+            <!-- Icon-Only Social Links -->
+            <nav aria-label="Social Links" class="flex items-center gap-3">
+                <a href="https://instagram.com/thecreativeomah" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                   class="w-10 h-10 rounded-full border border-white/12 flex items-center justify-center text-zinc-300 hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                </a>
+
+                <a href="https://tiktok.com/@thecreativeomah" target="_blank" rel="noopener noreferrer" aria-label="TikTok"
+                   class="w-10 h-10 rounded-full border border-white/12 flex items-center justify-center text-zinc-300 hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.3 1.75-.21.72-.15 1.5.15 2.18.3.69.86 1.25 1.56 1.55.7.31 1.51.34 2.24.11.75-.22 1.41-.75 1.81-1.42.36-.59.54-1.29.54-1.99V.02z"/>
+                    </svg>
+                </a>
+
+                <a href="mailto:gomah063@gmail.com" aria-label="Email Oma"
+                   class="w-10 h-10 rounded-full border border-white/12 flex items-center justify-center text-zinc-300 hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                    <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- KINETIC INTRO ELEMENT ("Hi, I am Oma." -> Glides Smoothly into Hero Left Slot) -->
+    <div id="intro-greeting" class="font-bold tracking-tight text-3xl sm:text-4xl md:text-5xl text-white select-none">
+        <span class="word-pop" data-delay="180">Hi,</span>
+        <span class="word-pop" data-delay="420">I</span>
+        <span class="word-pop" data-delay="620">am</span>
+        <span class="word-pop text-omaPink font-serif italic font-normal text-4xl sm:text-5xl md:text-6xl ml-1" data-delay="840">Oma.</span>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main id="top" class="relative z-10">
+
+        <!-- SECTION 1: HERO (CHOREOGRAPHED WORD-BY-WORD REVEALS + STATS + LEFT-TO-RIGHT CUTOUT) -->
+        <section class="min-h-screen max-w-7xl mx-auto px-6 md:px-14 pt-28 pb-16 flex items-center">
+            <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
+                
+                <!-- Left Column: Docked Greeting + Staggered Headline + Clean Metrics + Luxury Pills -->
+                <div class="lg:col-span-6 space-y-8 relative z-20">
+                    <!-- Target Anchor where "Hi, I am Oma." docks (Clean, zero glowing dots) -->
+                    <div id="greeting-anchor" class="h-10 sm:h-12 flex items-center">
+                        <span id="docked-greeting" class="opacity-0 font-bold text-xl sm:text-2xl tracking-tight text-white flex items-baseline gap-2">
+                            <span>Hi, I am</span>
+                            <span class="font-serif italic text-3xl sm:text-4xl text-omaPink font-normal">Oma.</span>
+                        </span>
+                    </div>
+
+                    <!-- Staggered Word-by-Word Kinetic Headline (No Paragraph Beneath) -->
+                    <h1 id="hero-headline" class="text-4xl sm:text-6xl xl:text-[64px] font-extrabold tracking-tight leading-[1.06] text-white">
+                        <span class="headline-word">Video</span>
+                        <span class="headline-word">Editor</span>
+                        <span class="headline-word text-omaPink font-serif italic font-normal">&amp;</span>
+                        <span class="headline-word">Motion</span>
+                        <span class="headline-word">Designer</span>
+                        <span class="headline-word">for</span>
+                        <span class="headline-word">Brands</span>
+                        <span class="headline-word text-omaBlush font-serif italic font-normal">&amp;</span>
+                        <span class="headline-word">Creators<span class="text-omaPink">.</span></span>
+                    </h1>
+
+                    <!-- Clean Editorial Metrics Row (Replaces Paragraph) -->
+                    <div id="hero-stats" class="hero-reveal flex items-center gap-8 sm:gap-12 pt-1">
+                        <div>
+                            <p class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">21K<span class="text-omaPink">+</span></p>
+                            <p class="text-xs font-mono uppercase tracking-widest text-zinc-400 mt-1">Community</p>
+                        </div>
+                        <div class="w-px h-11 bg-white/12"></div>
+                        <div>
+                            <p class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">1M<span class="text-omaPink">+</span></p>
+                            <p class="text-xs font-mono uppercase tracking-widest text-zinc-400 mt-1">Views Generated</p>
+                        </div>
+                    </div>
+
+                    <!-- Refined Flat Luxury Buttons (Zero Box-Shadow Glow) -->
+                    <div id="hero-ctas" class="hero-reveal pt-2 flex flex-wrap items-center gap-4">
+                        <a href="#work" class="px-8 py-4 rounded-full bg-omaPink text-black font-bold text-sm tracking-wide hover:bg-white transition-colors duration-300">
+                            Selected Work &rarr;
+                        </a>
+                        <a href="#course" class="px-8 py-4 rounded-full border border-white/20 text-white font-semibold text-sm hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                            CapCut Course
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Column: Unboxed Bold Editorial Cutout with Seamless Bottom Dissolve -->
+                <div id="hero-cutout-stage" class="cutout-entrance lg:col-span-6 relative flex justify-center lg:justify-end items-end">
+                    <div id="cutout-dropzone" class="relative w-full max-w-[520px] h-[54vh] sm:h-[68vh] lg:h-[82vh] flex items-end justify-center group select-none">
+                        
+                        <!-- Unframed Cutout Portrait with Smooth Bottom Mask Fade -->
+                        <img id="oma-cutout-img"
+                             src="media/omahcutout.png"
+                             onerror="this.style.display='none'; document.getElementById('cutout-placeholder-ui').classList.remove('hidden');"
+                             alt="Oma — Video Editor & Motion Designer"
+                             class="cutout-bottom-fade relative z-10 w-full h-full object-contain object-bottom scale-[1.06] origin-bottom">
+
+                        <!-- Matching Bottom Obsidian Gradient Veil for Extra-Smooth Dissolution -->
+                        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-obsidian via-obsidian/80 to-transparent z-20"></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 2: FULL-SCREEN SCROLL-DRIVEN ABOUT STORY (PURE TYPOGRAPHY — NO BADGES) -->
+        <section id="about" class="relative">
+            
+            <!-- STORY BEAT 1: FULL VIEWPORT -->
+            <div class="story-beat min-h-screen flex items-center justify-center px-6 md:px-14 py-24 border-t border-white/[0.07]">
+                <div class="story-beat-content max-w-4xl mx-auto text-center space-y-8">
+                    <h2 class="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.12] text-white">
+                        In May, I was celebrating my first <span class="text-omaPink font-serif italic font-normal text-4xl sm:text-6xl md:text-7xl">100 followers</span>.
+                    </h2>
+
+                    <p class="text-lg sm:text-2xl text-zinc-400 font-normal leading-relaxed max-w-3xl mx-auto">
+                        I started editing in February with nothing but curiosity and daily consistency—refining cuts, pacing, and visual storytelling until September, when I upgraded my setup, dropped my first <span class="text-white font-semibold">kinetic text animation</span> videos, and watched everything change within a week.
+                    </p>
+                </div>
+            </div>
+
+            <!-- STORY BEAT 2: FULL VIEWPORT + SEAMLESS TRANSITION TO WORK -->
+            <div class="story-beat min-h-screen flex items-center justify-center px-6 md:px-14 py-24 border-t border-white/[0.07]">
+                <div class="story-beat-content max-w-4xl mx-auto text-center space-y-10">
+                    <h2 class="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.12] text-white">
+                        Now over <span class="text-omaPink font-serif italic font-normal text-4xl sm:text-6xl md:text-7xl">21,000+</span> people watch every frame.
+                    </h2>
+
+                    <p class="text-lg sm:text-2xl text-zinc-400 font-normal leading-relaxed max-w-3xl mx-auto">
+                        From <span class="text-white font-semibold">17.6K+ on TikTok</span> to <span class="text-white font-semibold">4K+ on Instagram</span>, what started as simple edits turned into a signature motion style built to hold attention from the very first second.
+                    </p>
+
+                    <!-- Seamless Editorial Transition Into Selected Work -->
+                    <div class="pt-6">
+                        <a href="#work" class="group inline-flex flex-col items-center gap-4 text-center">
+                            <span class="text-lg sm:text-2xl font-medium text-zinc-300 group-hover:text-white transition-colors">
+                                From zero to where I am now — <span class="font-serif italic text-2xl sm:text-4xl text-omaPink">here’s what my work looks like today.</span>
+                            </span>
+                            <span class="w-11 h-11 rounded-full border border-white/15 flex items-center justify-center text-omaPink group-hover:border-omaPink group-hover:translate-y-1 transition-all duration-300">
+                                &darr;
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SECTION 3: SELECTED WORK (SINGLE HORIZONTAL SCROLLABLE ROW OF PORTRAIT REELS) -->
+        <section id="work" class="py-28 border-t border-white/[0.07]">
+            <div class="max-w-7xl mx-auto px-6 md:px-14">
+                <!-- Section Header + Category Filters + Horizontal Scroll Controls -->
+                <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
+                    <div>
+                        <h2 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white">
+                            Selected <span class="font-serif italic font-normal text-omaPink">Work.</span>
+                        </h2>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between lg:justify-end gap-4">
+                        <!-- Niche Filter Pills -->
+                        <div class="flex flex-wrap gap-2" id="portfolio-filters">
+                            <button data-filter="all" class="filter-btn active px-4 py-2 rounded-full text-xs font-semibold bg-omaPink text-black transition-colors">
+                                All Edits
+                            </button>
+                            <button data-filter="motion" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border border-white/12 text-zinc-300 hover:border-omaPink transition-colors">
+                                Text Animation
+                            </button>
+                            <button data-filter="talking" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border border-white/12 text-zinc-300 hover:border-omaPink transition-colors">
+                                Talking Heads
+                            </button>
+                            <button data-filter="ugc" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border border-white/12 text-zinc-300 hover:border-omaPink transition-colors">
+                                UGC &amp; Lifestyle
+                            </button>
+                        </div>
+
+                        <!-- Horizontal Scroll Arrow Controls -->
+                        <div class="hidden sm:flex items-center gap-2">
+                            <button type="button" onclick="scrollReels(-1)" aria-label="Scroll Left"
+                                    class="w-10 h-10 rounded-full border border-white/12 flex items-center justify-center text-white hover:border-omaPink hover:text-omaPink transition-colors">
+                                &larr;
+                            </button>
+                            <button type="button" onclick="scrollReels(1)" aria-label="Scroll Right"
+                                    class="w-10 h-10 rounded-full border border-white/12 flex items-center justify-center text-white hover:border-omaPink hover:text-omaPink transition-colors">
+                                &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Single Horizontal Line Scrollable Track (Never Stacked Vertically) -->
+            <div class="max-w-7xl mx-auto px-6 md:px-14">
+                <div id="reel-track" class="flex flex-nowrap gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-4 scroll-smooth">
+                    
+                    <!-- Reel Card 1: Text Animation -->
+                    <div data-category="motion"
+                         onclick="openLightbox('https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-under-neon-lights-40035-large.mp4')"
+                         class="reel-card snap-start shrink-0 w-[260px] sm:w-[295px] md:w-[315px] aspect-[9/16] relative rounded-2xl overflow-hidden bg-zinc-950 border border-white/10 cursor-pointer group">
+                        <video autoplay loop muted playsinline class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100">
+                            <source src="media/textanim.mp4" type="video/mp4">
+                        </video>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent"></div>
+                        <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-obsidian/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-omaBlush">
+                            Text Animation
+                        </span>
+                        <div class="absolute bottom-5 left-5 right-5">
+                            <h3 class="font-bold text-white text-base">Viral Typography Hook</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Keyframe motion &amp; sound design</p>
+                        </div>
+                    </div>
+
+                    <!-- Reel Card 2: Talking Heads -->
+                    <div data-category="talking"
+                         onclick="openLightbox('https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-a-video-call-42913-large.mp4')"
+                         class="reel-card snap-start shrink-0 w-[260px] sm:w-[295px] md:w-[315px] aspect-[9/16] relative rounded-2xl overflow-hidden bg-zinc-950 border border-white/10 cursor-pointer group">
+                        <video autoplay loop muted playsinline class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100">
+                            <source src="media/retention.mp4" type="video/mp4">
+                        </video>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent"></div>
+                        <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-obsidian/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-zinc-200">
+                            Talking Head
+                        </span>
+                        <div class="absolute bottom-5 left-5 right-5">
+                            <h3 class="font-bold text-white text-base">Creator Brand Story</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Dynamic captions &amp; B-roll overlays</p>
+                        </div>
+                    </div>
+
+                    <!-- Reel Card 3: UGC & Lifestyle -->
+                    <div data-category="ugc"
+                         onclick="openLightbox('https://assets.mixkit.co/videos/preview/mixkit-woman-applying-cream-on-her-face-39878-large.mp4')"
+                         class="reel-card snap-start shrink-0 w-[260px] sm:w-[295px] md:w-[315px] aspect-[9/16] relative rounded-2xl overflow-hidden bg-zinc-950 border border-white/10 cursor-pointer group">
+                        <video autoplay loop muted playsinline class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100">
+                            <source src="media/ugc.mp4" type="video/mp4">
+                        </video>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent"></div>
+                        <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-obsidian/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-omaLavender">
+                            UGC &amp; Beauty
+                        </span>
+                        <div class="absolute bottom-5 left-5 right-5">
+                            <h3 class="font-bold text-white text-base">Skincare Commercial Cut</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Aesthetic grade &amp; smooth transitions</p>
+                        </div>
+                    </div>
+
+                    <!-- Reel Card 4: Motion Design -->
+                    <div data-category="motion"
+                         onclick="openLightbox('https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-man-playing-on-a-computer-43527-large.mp4')"
+                         class="reel-card snap-start shrink-0 w-[260px] sm:w-[295px] md:w-[315px] aspect-[9/16] relative rounded-2xl overflow-hidden bg-zinc-950 border border-white/10 cursor-pointer group">
+                        <video autoplay loop muted playsinline class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100">
+                            <source src="media/omahvid.mp4" type="video/mp4">
+                        </video>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent"></div>
+                        <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-obsidian/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-omaBlush">
+                            Motion Design
+                        </span>
+                        <div class="absolute bottom-5 left-5 right-5">
+                            <h3 class="font-bold text-white text-base">Brand Launch Reel</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Beat-synced kinetic typography</p>
+                        </div>
+                    </div>
+
+                    <!-- Reel Card 5: Extra Card to Emphasize Smooth Horizontal Scroll -->
+                    <div data-category="talking"
+                         onclick="openLightbox('https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-under-neon-lights-40035-large.mp4')"
+                         class="reel-card snap-start shrink-0 w-[260px] sm:w-[295px] md:w-[315px] aspect-[9/16] relative rounded-2xl overflow-hidden bg-zinc-950 border border-white/10 cursor-pointer group">
+                        <video autoplay loop muted playsinline class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100">
+                            <source src="https://assets.mixkit.co/videos/preview/mixkit-woman-dancing-under-neon-lights-40035-large.mp4" type="video/mp4">
+                        </video>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent"></div>
+                        <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-obsidian/80 backdrop-blur-md border border-white/10 text-[11px] font-mono text-zinc-200">
+                            Retention Edit
+                        </span>
+                        <div class="absolute bottom-5 left-5 right-5">
+                            <h3 class="font-bold text-white text-base">High-Paced Tutorial Cut</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Clean zooms &amp; text callouts</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: COMPACT COURSE SPOTLIGHT (UNDERSTATED EDITORIAL CARD) -->
+        <section id="course" class="max-w-7xl mx-auto px-6 md:px-14 py-12">
+            <div class="rounded-3xl border border-white/10 bg-zinc-950 p-8 sm:p-10 md:p-12 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div class="space-y-3 max-w-2xl">
+                    <p class="text-xs font-mono uppercase tracking-widest text-omaPink">For Aspiring Editors</p>
+                    <h3 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+                        CapCut <span class="font-serif italic font-normal text-omaPink">Crash Course</span>
+                    </h3>
+                    <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                        Go from zero to confident editor. Step-by-step beginner lessons covering clean cuts, trending text animations, transitions, and practical projects with lifetime access.
+                    </p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-4 shrink-0">
+                    <div class="flex items-baseline gap-3">
+                        <span class="text-sm font-mono text-zinc-500 line-through">₦32,000</span>
+                        <span class="text-3xl font-extrabold text-white">₦25,000</span>
+                    </div>
+                    <a href="https://selar.co" target="_blank" rel="noopener noreferrer"
+                       class="px-7 py-3.5 rounded-full border border-white/20 text-white font-bold text-xs uppercase tracking-wider hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                        Enroll Now &rarr;
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: MINIMALIST CLOSING CTA & SOCIAL OUTREACH (NO CONTACT FORM) -->
+        <section id="contact" class="max-w-4xl mx-auto px-6 md:px-14 py-32 text-center space-y-8">
+            <h2 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.08]">
+                Ready to level up your <span class="font-serif italic font-normal text-omaPink">content?</span>
+            </h2>
+
+            <p class="text-zinc-400 text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+                For video editing packages, custom kinetic text animations, or brand &amp; UGC collaborations, reach out directly on any platform below.
+            </p>
+
+            <!-- Direct Social & Email Outreach Icons -->
+            <div class="pt-4 flex items-center justify-center gap-5">
+                <!-- Instagram -->
+                <a href="https://instagram.com/thecreativeomah" target="_blank" rel="noopener noreferrer" aria-label="Message Oma on Instagram"
+                   class="w-14 h-14 rounded-full border border-white/15 flex items-center justify-center text-white hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                </a>
+
+                <!-- TikTok -->
+                <a href="https://tiktok.com/@thecreativeomah" target="_blank" rel="noopener noreferrer" aria-label="Message Oma on TikTok"
+                   class="w-14 h-14 rounded-full border border-white/15 flex items-center justify-center text-white hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.3 1.75-.21.72-.15 1.5.15 2.18.3.69.86 1.25 1.56 1.55.7.31 1.51.34 2.24.11.75-.22 1.41-.75 1.81-1.42.36-.59.54-1.29.54-1.99V.02z"/>
+                    </svg>
+                </a>
+
+                <!-- Email -->
+                <a href="mailto:gomah063@gmail.com" aria-label="Email Oma"
+                   class="w-14 h-14 rounded-full border border-white/15 flex items-center justify-center text-white hover:border-omaPink hover:text-omaPink transition-colors duration-300">
+                    <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                        <rect width="20" height="16" x="2" y="4" rx="2"/>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                    </svg>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MINIMAL COPYRIGHT & LEGAL FOOTER BAR -->
+    <footer class="relative z-10 border-t border-white/[0.07] py-8 px-6 md:px-14">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+            <div class="flex items-center gap-3">
+                <span class="text-base font-extrabold text-white">Oma<span class="text-omaPink">.</span></span>
+                <span>&copy; 2026 Gift Chioma. All rights reserved.</span>
+            </div>
+
+            <button type="button" onclick="openLegalModal()" class="hover:text-white transition-colors">
+                Privacy &amp; Terms
+            </button>
+        </div>
+    </footer>
+
+    <!-- VERTICAL LIGHTBOX VIDEO PLAYER MODAL -->
+    <div id="video-lightbox" class="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md hidden items-center justify-center p-4">
+        <button onclick="closeLightbox()" aria-label="Close Video" class="absolute top-6 right-6 w-11 h-11 rounded-full border border-white/20 text-white hover:border-omaPink hover:text-omaPink flex items-center justify-center text-xl transition-colors z-50">
+            &times;
+        </button>
+        <div class="w-full max-w-[380px] aspect-[9/16] rounded-3xl overflow-hidden border border-white/15 bg-black relative">
+            <video id="lightbox-player" controls playsinline class="w-full h-full object-cover"></video>
+        </div>
+    </div>
+
+    <!-- MINIMAL LEGAL MODAL -->
+    <div id="legal-modal" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="bg-zinc-950 border border-white/12 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-4 relative">
+            <button onclick="closeLegalModal()" class="absolute top-5 right-5 text-zinc-400 hover:text-white text-xl">&times;</button>
+            <h3 class="text-xl font-bold text-white">Privacy Policy &amp; Terms</h3>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+                <strong class="text-white">Privacy:</strong> Direct inquiries sent via email or social channels are used strictly to coordinate creative projects and are never shared with third parties.
+            </p>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+                <strong class="text-white">Copyright:</strong> All video edits, kinetic motion graphics, and original creative assets displayed on this portfolio belong to Oma (Gift Chioma) and respective client brands.
+            </p>
+        </div>
+    </div>
+
+    <!-- CHOREOGRAPHED KINETIC ENGINE & INTERACTIONS -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. KINETIC OPENING SEQUENCE ("Hi, I am Oma." -> Docks Left -> Staggered Hero Choreography)
+            const introWords = document.querySelectorAll('#intro-greeting .word-pop');
+            const introGreeting = document.getElementById('intro-greeting');
+            const greetingAnchor = document.getElementById('greeting-anchor');
+            const dockedGreeting = document.getElementById('docked-greeting');
+            const navbar = document.getElementById('navbar');
+
+            const headlineWords = document.querySelectorAll('#hero-headline .headline-word');
+            const heroStats = document.getElementById('hero-stats');
+            const heroCtas = document.getElementById('hero-ctas');
+            const cutoutStage = document.getElementById('hero-cutout-stage');
+
+            // Step A: Pop "Hi, I am Oma." in word-by-word
+            introWords.forEach((word) => {
+                const delay = parseInt(word.getAttribute('data-delay') || '0', 10);
+                setTimeout(() => {
+                    word.classList.add('animate');
+                }, delay);
+            });
+
+            // Step B: Move "Hi, I am Oma." smoothly to the top-left hero resting spot
+            setTimeout(() => {
+                const anchorRect = greetingAnchor.getBoundingClientRect();
+                introGreeting.style.top = `${anchorRect.top + anchorRect.height / 2}px`;
+                introGreeting.style.left = `${anchorRect.left}px`;
+                introGreeting.style.transform = 'translate(0, -50%) scale(0.68)';
+                introGreeting.style.transformOrigin = 'left center';
+
+                navbar.classList.remove('opacity-0');
+
+                // Step C: Once docked, choreograph each hero element smoothly
+                setTimeout(() => {
+                    introGreeting.style.opacity = '0';
+                    dockedGreeting.classList.remove('opacity-0');
+
+                    // 1. Headline words appear one by one slowly
+                    headlineWords.forEach((word, index) => {
+                        setTimeout(() => {
+                            word.classList.add('visible');
+                        }, index * 110);
+                    });
+
+                    const headlineCompleteDelay = headlineWords.length * 110 + 180;
+
+                    // 2. Clean Metrics (21K+ Community | 1M+ Views Generated) appear smoothly
+                    setTimeout(() => {
+                        heroStats.classList.add('visible');
+                    }, headlineCompleteDelay);
+
+                    // 3. Luxury Pill Buttons appear next
+                    setTimeout(() => {
+                        heroCtas.classList.add('visible');
+                    }, headlineCompleteDelay + 260);
+
+                    // 4. Cutout glides smoothly from left-to-right while interpolating opacity 0 -> 1
+                    setTimeout(() => {
+                        cutoutStage.classList.add('visible');
+                    }, 220);
+
+                }, 850);
+            }, 1650);
+
+            // 2. FULL-SCREEN SCROLL STORY OBSERVER
+            const storyBeats = document.querySelectorAll('.story-beat');
+            const storyObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('in-view');
+                    }
+                });
+            }, { threshold: 0.35 });
+
+            storyBeats.forEach((beat) => storyObserver.observe(beat));
+
+            // 3. PORTFOLIO NICHE FILTERING (HORIZONTAL ROW)
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const reelCards = document.querySelectorAll('.reel-card');
+            const reelTrack = document.getElementById('reel-track');
+
+            filterBtns.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach((b) => {
+                        b.classList.remove('active', 'bg-omaPink', 'text-black');
+                        b.classList.add('border', 'border-white/12', 'text-zinc-300');
+                    });
+                    btn.classList.add('active', 'bg-omaPink', 'text-black');
+                    btn.classList.remove('border', 'border-white/12', 'text-zinc-300');
+
+                    const filter = btn.getAttribute('data-filter');
+                    reelCards.forEach((card) => {
+                        if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                            card.classList.remove('hidden');
+                        } else {
+                            card.classList.add('hidden');
+                        }
+                    });
+                    reelTrack.scrollTo({ left: 0, behavior: 'smooth' });
+                });
+            });
+
+            // 4. LIVE CUTOUT PNG PREVIEWER
+            function handleCutoutUpload(event) {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.getElementById('oma-cutout-img');
+                    const placeholder = document.getElementById('cutout-placeholder-ui');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    placeholder.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            document.getElementById('cutout-file-input')?.addEventListener('change', handleCutoutUpload);
+            document.getElementById('cutout-swap-input')?.addEventListener('change', handleCutoutUpload);
+        });
+
+        // 5. HORIZONTAL SCROLL BUTTON HANDLER
+        function scrollReels(direction) {
+            const track = document.getElementById('reel-track');
+            track.scrollBy({ left: direction * 340, behavior: 'smooth' });
+        }
+
+        // 6. LIGHTBOX PLAYER CONTROLS
+        function openLightbox(videoUrl) {
+            const modal = document.getElementById('video-lightbox');
+            const player = document.getElementById('lightbox-player');
+            player.src = videoUrl;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            player.play().catch(() => {});
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('video-lightbox');
+            const player = document.getElementById('lightbox-player');
+            player.pause();
+            player.src = '';
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        // 7. LEGAL MODAL CONTROLS
+        function openLegalModal() {
+            const modal = document.getElementById('legal-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeLegalModal() {
+            const modal = document.getElementById('legal-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeLightbox();
+                closeLegalModal();
+            }
+        });
+    </script>
+</body>
+</html>
